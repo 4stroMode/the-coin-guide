@@ -25,4 +25,4 @@ file(GLOB_RECURSE SPRITE_FILES CONFIGURE_DEPENDS "resources/*.png")
 
 add_library(${PROJECT_NAME} SHARED ${SOURCES} ${SPRITE_FILES})
 
-setup_geode_mod(${PROJECT_NAME})
+setup_geode_mod(${PROJECT_NAME} EXTERNALS jouca.badgesapi:*)
