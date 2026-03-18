@@ -12,7 +12,7 @@
     "developer": "4stromode",
     "description": "A guide for users to find User Coins in rated levels.",
     "dependencies": {
-        "jouca.badgesapi": "*"
+        "jouca.badgesapi": ">=v1.0.0"
     },
     "resources": {
         "files": [
