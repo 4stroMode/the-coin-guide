@@ -1,0 +1,22 @@
+{
+    "geode": "5.3.0",
+    "gd": {
+        "win": "2.2081",
+        "android": "2.2081",
+        "mac": "2.2081",
+        "ios": "2.2081"
+    },
+    "version": "v1.0.0",
+    "id": "4stromode.the_coin_guide",
+    "name": "The Coin Guide",
+    "developer": "4stromode",
+    "description": "A guide for users to find User Coins in rated levels.",
+    "dependencies": {
+        "jouca.badgesapi": "*"
+    },
+    "resources": {
+        "files": [
+            "resources/*.png"
+        ]
+    }
+}
