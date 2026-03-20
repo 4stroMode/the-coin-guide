@@ -12,7 +12,6 @@ using namespace geode::prelude;
 #include "CoinGuidePopup.hpp"
 #include "CoinSubmitPopup.hpp"
 #include "CoinSearchPopup.hpp"
-#include "CoinRatingPopup.hpp"
 
 class AdminAddUserPopup : public FLAlertLayer {
 protected:
@@ -188,58 +187,6 @@ class $modify(CoinGuideLevelInfoLayer, LevelInfoLayer) {
                 menu->updateLayout();
                 this->addChild(menu);
             }
-
-            if (auto normalBar = this->getChildByID("normal-mode-bar")) {
-                bool hasRated = Mod::get()->getSavedValue<bool>(fmt::format("rated_coins_{}", level->m_levelID));
-                auto rateSpr = CCSprite::createWithSpriteFrameName("GJ_like2Btn_001.png");
-                rateSpr->setScale(0.6f);
-                if (hasRated) {
-                    rateSpr->setColor({100, 100, 100});
-                }
-                auto rateBtnX = CCMenuItemSpriteExtra::create(rateSpr, this, menu_selector(CoinGuideLevelInfoLayer::onRateCoins));
-                rateBtnX->setID("coin-rating-btn"_spr);
-
-                auto rMenu = CCMenu::create();
-                rMenu->setPosition({normalBar->getPositionX() + normalBar->getContentSize().width / 2.f * normalBar->getScaleX() + 20.f, normalBar->getPositionY()});
-                rMenu->addChild(rateBtnX);
-                rMenu->setZOrder(normalBar->getZOrder());
-                this->addChild(rMenu);
-            }
-
-            if (auto diffSprite = this->getChildByID("difficulty-sprite")) {
-                auto label = CCLabelBMFont::create("...", "bigFont.fnt");
-                label->setScale(0.7f);
-
-                auto avgBtn = CCMenuItemSpriteExtra::create(label, this, menu_selector(CoinGuideLevelInfoLayer::onAverageRatingHelp));
-                avgBtn->setID("coin-avg-btn"_spr);
-
-                auto avgMenu = CCMenu::create();
-                avgMenu->setPosition({diffSprite->getPositionX() - 35.f, diffSprite->getPositionY()});
-                avgMenu->addChild(avgBtn);
-                avgMenu->setZOrder(diffSprite->getZOrder());
-                this->addChild(avgMenu);
-
-                geode::Ref<CCLabelBMFont> labelRef = label;
-                Database::fetchAverageCoinRating(level->m_levelID, [labelRef](std::optional<int> avg) {
-                    if (labelRef) {
-                        if (avg.has_value()) {
-                            int val = avg.value();
-                            labelRef->setString(std::to_string(val).c_str());
-                            
-                            if (val <= 2) labelRef->setColor({50, 150, 255});       // Blue
-                            else if (val <= 4) labelRef->setColor({0, 255, 0});     // Green
-                            else if (val <= 6) labelRef->setColor({255, 255, 0});   // Yellow
-                            else if (val <= 8) labelRef->setColor({255, 150, 0});   // Orange
-                            else if (val == 9) labelRef->setColor({200, 100, 255}); // Light Purple
-                            else labelRef->setColor({255, 0, 0});                   // Red
-                        } else {
-                            labelRef->setString("N/A");
-                            labelRef->setScale(0.5f);
-                            labelRef->setColor({150, 150, 150});
-                        }
-                    }
-                });
-            }
         }
 
         return true;
@@ -251,28 +198,6 @@ class $modify(CoinGuideLevelInfoLayer, LevelInfoLayer) {
 
     void onWriteGuide(CCObject* sender) {
         CoinSubmitPopup::create(m_level)->show();
-    }
-
-    void onRateCoins(CCObject* sender) {
-        if (Mod::get()->getSavedValue<bool>(fmt::format("rated_coins_{}", m_level->m_levelID))) {
-            FLAlertLayer::create("Already Evaluated", "You have already evaluated the coins for this level.", "OK")->show();
-            return;
-        }
-        CoinRatingPopup::create(m_level)->show();
-    }
-
-    void onAverageRatingHelp(CCObject* sender) {
-        FLAlertLayer::create(
-            "Coins Rating",
-            "This rating is based on user opinions to indicate the difficulty of the coins.\n"
-            "<cg>1-2</c> Easy Coins\n"
-            "<cl>3-4</c> Intermediate Coins\n"
-            "<cy>4-5</c> Hard Coins\n"
-            "<co>6-7</c> Difficult Coins\n"
-            "<cp>8-9</c> Insane Coins\n"
-            "<cr>10</c> Extreme Coins",
-            "OK"
-        )->show();
     }
 
     void onCoinGuideProfilePage(CCObject* sender) {
@@ -312,7 +237,19 @@ class $modify(CoinGuideLevelSearchLayer, LevelSearchLayer) {
     }
 
     void onFreeCoins(CCObject*) {
-        CoinSearchPopup::create()->show();
+                        }
+                    }
+
+                    CCDirector::sharedDirector()->pushScene(CCTransitionFade::create(0.5f, browserScene));
+                } else {
+                    if (result.has_value()) {
+                        FLAlertLayer::create("Notice", "No levels with free coins found.", "OK")->show();
+                    } else {
+                        FLAlertLayer::create("Error", "Failed to connect to the database.", "OK")->show();
+                    }
+                }
+            });
+        });
     }
 };
 
@@ -372,7 +309,6 @@ class $modify(CoinGuideProfilePage, ProfilePage) {
                             auto spr = CCSprite::create(tex.c_str());
                             float targetWidth = 20.0f;
                             spr->setScale(targetWidth / spr->getContentSize().width);
-                            spr->setAnchorPoint({0.5f, 0.65f}); // Push graphic down slightly inside the button bounds
                             
                             auto btn = CCMenuItemSpriteExtra::create(spr, this, menu_selector(CoinGuideProfilePage::onCustomBadge));
                             btn->setID("admin-mod-badge"_spr);
@@ -386,7 +322,7 @@ class $modify(CoinGuideProfilePage, ProfilePage) {
     }
 
     void onCustomBadge(CCObject*) {
-        FLAlertLayer::create("Coin Guide Staff", "This user is an Staff on The Coin Guide, they help adding guides of every user coin.", "OK")->show();
+        FLAlertLayer::create("Guide Badge", "This user is an Staff on The Coin Guide, they help adding guides of every user coin.", "OK")->show();
     }
 
     void onAddUser(CCObject*) {

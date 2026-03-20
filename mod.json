@@ -6,11 +6,15 @@
         "mac": "2.2081",
         "ios": "2.2081"
     },
-    "version": "v1.0.0",
+    "version": "v1.0.1",
     "id": "4stromode.the_coin_guide",
     "name": "The Coin Guide",
     "developer": "4stromode",
     "description": "A guide for users to find User Coins in rated levels.",
+    "links": {
+        "community": "https://discord.gg/jbZEQbcMtQ",
+        "source": "https://github.com/4stroMode/the-coin-guide"
+    },
     "dependencies": {
         "jouca.badgesapi": ">=v1.0.0"
     },
