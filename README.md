@@ -1,4 +1,5 @@
 # The Coin Guide
+The coin guide is a Geode Mod that helps players to get info about the coins of a rated level, giving you guides and community rating of difficulty on the coins.
 ## Advanced Coins Search Filter
 The mods gives you a new button on the search tab to help you search levels from our database.
 <img width="383" height="235" alt="searchbutton" src="https://github.com/user-attachments/assets/2ff25c44-5aed-4aa5-9e40-f7192dee8e83" />
