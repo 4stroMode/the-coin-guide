@@ -13,6 +13,6 @@ This button shows you the coins guide to the level only if they exists.
 * **Coins rating difficulty**
 Near the level difficulty, there is now a number that shows you the coins difficulty based on many players opinion.
 <img width="201" height="202" alt="{BB15953D-4452-41FA-9EB3-13654D6576C6}" src="https://github.com/user-attachments/assets/5b4662dd-d7a8-41b4-8a51-9197e40c1fe0" />
-You can rate the coins of a level on a button near the progress bar.
+### You can rate the coins of a level on a button near the progress bar.
 <img width="1274" height="717" alt="{27CF2E77-FA38-4F3B-9FEF-36B271CE402B}" src="https://github.com/user-attachments/assets/8cd0c087-ca01-4fe3-b478-b50f8c1988f8" />
 <img width="1279" height="717" alt="{18B45803-0529-40F3-A50D-E1FE61A461D5}" src="https://github.com/user-attachments/assets/bd1110dc-6948-4171-832d-77d0525db4d3" />
