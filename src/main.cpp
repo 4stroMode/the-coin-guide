@@ -189,7 +189,8 @@ class $modify(CoinGuideLevelInfoLayer, LevelInfoLayer) {
                 this->addChild(menu);
             }
 
-            if (auto normalBar = this->getChildByID("normal-mode-bar")) {
+            CCLabelBMFont* totalVotesLbl = nullptr;
+            if (auto practiceBar = this->getChildByID("practice-mode-bar")) {
                 bool hasRated = Mod::get()->getSavedValue<bool>(fmt::format("rated_coins_{}", level->m_levelID));
                 auto rateSpr = CCSprite::createWithSpriteFrameName("GJ_like2Btn_001.png");
                 rateSpr->setScale(0.6f);
@@ -199,32 +200,58 @@ class $modify(CoinGuideLevelInfoLayer, LevelInfoLayer) {
                 auto rateBtnX = CCMenuItemSpriteExtra::create(rateSpr, this, menu_selector(CoinGuideLevelInfoLayer::onRateCoins));
                 rateBtnX->setID("coin-rating-btn"_spr);
 
-                auto rMenu = CCMenu::create();
-                rMenu->setPosition({normalBar->getPositionX() + normalBar->getContentSize().width / 2.f * normalBar->getScaleX() + 20.f, normalBar->getPositionY()});
-                rMenu->addChild(rateBtnX);
-                rMenu->setZOrder(normalBar->getZOrder());
-                this->addChild(rMenu);
+                auto rateMenuLayout = CCMenu::create();
+                rateMenuLayout->setPosition({practiceBar->getPositionX() + practiceBar->getContentSize().width / 2.f * practiceBar->getScaleX() + 20.f, practiceBar->getPositionY()});
+                rateMenuLayout->addChild(rateBtnX);
+
+                totalVotesLbl = CCLabelBMFont::create("0", "bigFont.fnt");
+                totalVotesLbl->setScale(0.45f);
+                totalVotesLbl->setPosition({rateBtnX->getPositionX() + rateBtnX->getScaledContentSize().width / 2.f + 16.f, rateBtnX->getPositionY()});
+                totalVotesLbl->setVisible(false); // Hide until fetched
+                rateMenuLayout->addChild(totalVotesLbl);
+
+                rateMenuLayout->setZOrder(practiceBar->getZOrder());
+                this->addChild(rateMenuLayout);
             }
 
+            geode::Ref<CCLabelBMFont> votesLblRef = totalVotesLbl;
+
             if (auto diffSprite = this->getChildByID("difficulty-sprite")) {
-                auto label = CCLabelBMFont::create("...", "bigFont.fnt");
-                label->setScale(0.7f);
+                    auto label = CCLabelBMFont::create("...", "bigFont.fnt");
+                    label->setScale(0.6f);
 
-                auto avgBtn = CCMenuItemSpriteExtra::create(label, this, menu_selector(CoinGuideLevelInfoLayer::onAverageRatingHelp));
-                avgBtn->setID("coin-avg-btn"_spr);
+                    auto avgBtn = CCMenuItemSpriteExtra::create(label, this, menu_selector(CoinGuideLevelInfoLayer::onAverageRatingHelp));
+                    avgBtn->setID("coin-avg-btn"_spr);
 
-                auto avgMenu = CCMenu::create();
-                avgMenu->setPosition({diffSprite->getPositionX() - 35.f, diffSprite->getPositionY()});
-                avgMenu->addChild(avgBtn);
-                avgMenu->setZOrder(diffSprite->getZOrder());
-                this->addChild(avgMenu);
+                    auto avgMenu = CCMenu::create();
+                    avgMenu->setPosition({diffSprite->getPositionX() - 29.f, diffSprite->getPositionY() - 43.f});
+                    avgMenu->addChild(avgBtn);
+                    avgMenu->setZOrder(diffSprite->getZOrder());
+                    this->addChild(avgMenu);
 
-                geode::Ref<CCLabelBMFont> labelRef = label;
-                Database::fetchAverageCoinRating(level->m_levelID, [labelRef](std::optional<int> avg) {
-                    if (labelRef) {
-                        if (avg.has_value()) {
-                            int val = avg.value();
-                            labelRef->setString(std::to_string(val).c_str());
+                    geode::Ref<CCLabelBMFont> labelRef = label;
+                    Database::fetchAverageCoinRating(level->m_levelID, [labelRef, votesLblRef](std::optional<std::pair<int, int>> avgData) {
+                        if (labelRef && votesLblRef) {
+                            if (avgData.has_value()) {
+                                int val = avgData.value().first;
+                                int total = avgData.value().second;
+                                
+                                labelRef->setString(std::to_string(val).c_str());
+                                
+                                std::string formattedTotal;
+                                if (total >= 1000000) {
+                                    int m = total / 1000000;
+                                    int k = (total % 1000000) / 100000;
+                                    formattedTotal = k > 0 ? fmt::format("{}.{}M", m, k) : fmt::format("{}M", m);
+                                } else if (total >= 1000) {
+                                    int k = total / 1000;
+                                    int h = (total % 1000) / 100;
+                                    formattedTotal = h > 0 ? fmt::format("{}.{}k", k, h) : fmt::format("{}k", k);
+                                } else {
+                                    formattedTotal = std::to_string(total);
+                                }
+                                votesLblRef->setString(formattedTotal.c_str());
+                                votesLblRef->setVisible(true);
                             
                             if (val <= 2) labelRef->setColor({50, 150, 255});       // Blue
                             else if (val <= 4) labelRef->setColor({0, 255, 0});     // Green
@@ -232,7 +259,7 @@ class $modify(CoinGuideLevelInfoLayer, LevelInfoLayer) {
                             else if (val <= 8) labelRef->setColor({255, 150, 0});   // Orange
                             else if (val == 9) labelRef->setColor({200, 100, 255}); // Light Purple
                             else labelRef->setColor({255, 0, 0});                   // Red
-                        } else {
+                            } else {
                             labelRef->setString("N/A");
                             labelRef->setScale(0.5f);
                             labelRef->setColor({150, 150, 150});
@@ -277,6 +304,98 @@ class $modify(CoinGuideLevelInfoLayer, LevelInfoLayer) {
 
     void onCoinGuideProfilePage(CCObject* sender) {
         ProfilePage::create(GJAccountManager::sharedState()->m_accountID, true)->show();
+    }
+};
+
+#include <Geode/modify/CommentCell.hpp>
+#include <Geode/binding/GJComment.hpp>
+
+class $modify(CoinGuideCommentCell, CommentCell) {
+    void loadFromComment(GJComment* comment) {
+        CommentCell::loadFromComment(comment);
+        
+        if (this->m_accountComment) return;
+
+        if (comment->m_accountID > 0) {
+            auto accountId = comment->m_accountID;
+            auto cell = this;
+            Database::fetchUserRole(accountId, [cell, accountId, comment](std::optional<std::string> role) {
+                if (role) {
+                    std::string roleStr = role.value();
+                    std::string tex = "";
+                    if (roleStr == "owner" || roleStr == "admin") tex = "adminbadge.png"_spr;
+                    else if (roleStr == "mod") tex = "modbadge.png"_spr;
+                    
+                    if (!tex.empty()) {
+                        geode::queueInMainThread([cell, tex, comment]() {
+                            if (cell && cell->m_mainLayer) {
+                                auto spr = CCSprite::create(tex.c_str());
+                                if (!spr) return;
+                                spr->setScale(14.0f / spr->getContentSize().width);
+                                spr->setAnchorPoint({0.f, 0.45f});
+                                
+                                CCLabelBMFont* nameLbl = nullptr;
+                                auto findLabel = [&nameLbl](CCNode* parent, const std::string& name, auto& self) -> void {
+                                    if (nameLbl) return;
+                                    if (auto lbl = typeinfo_cast<CCLabelBMFont*>(parent)) {
+                                        std::string str = lbl->getString();
+                                        if (str.find(name) != std::string::npos && str.length() < name.length() + 10) {
+                                            nameLbl = lbl;
+                                            return;
+                                        }
+                                    }
+                                    if (parent->getChildrenCount() > 0) {
+                                        for (CCNode* child : parent->getChildrenExt()) {
+                                            self(child, name, self);
+                                        }
+                                    }
+                                };
+                                findLabel(cell->m_mainLayer, comment->m_userName, findLabel);
+                                
+                                auto badgeMenu = CCMenu::create();
+                                badgeMenu->setPosition({0, 0});
+                                cell->m_mainLayer->addChild(badgeMenu);
+                                
+                                auto badgeMenuBtn = CCMenuItemSpriteExtra::create(spr, nullptr, nullptr);
+                                badgeMenuBtn->setID("admin-mod-badge"_spr);
+                                
+                                if (nameLbl) {
+                                    auto worldPos = nameLbl->convertToWorldSpace(CCPoint{nameLbl->getContentSize().width + 23.8f, nameLbl->getContentSize().height / 2.f});
+                                    auto localPos = cell->m_mainLayer->convertToNodeSpace(worldPos);
+                                    
+                                    badgeMenuBtn->setPosition(localPos);
+
+                                    CCLabelBMFont* pctLbl = nullptr;
+                                    auto findPct = [&pctLbl](CCNode* parent, auto& self) -> void {
+                                        if (pctLbl) return;
+                                        if (auto lbl = typeinfo_cast<CCLabelBMFont*>(parent)) {
+                                            std::string str = lbl->getString();
+                                            if (str.find("%") != std::string::npos && str.length() <= 5) {
+                                                pctLbl = lbl;
+                                                return;
+                                            }
+                                        }
+                                        if (parent->getChildrenCount() > 0) {
+                                            for (CCNode* child : parent->getChildrenExt()) {
+                                                self(child, self);
+                                            }
+                                        }
+                                    };
+                                    findPct(cell->m_mainLayer, findPct);
+                                    
+                                    if (pctLbl) {
+                                        pctLbl->setPositionX(pctLbl->getPositionX() + 16.f);
+                                    }
+                                } else {
+                                    badgeMenuBtn->setPosition({115.f, 30.f});
+                                }
+                                badgeMenu->addChild(badgeMenuBtn);
+                            }
+                        });
+                    }
+                }
+            });
+        }
     }
 };
 

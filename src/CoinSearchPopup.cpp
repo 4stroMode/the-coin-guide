@@ -1,4 +1,5 @@
 #include "CoinSearchPopup.hpp"
+#include "CoinRatingFilterPopup.hpp"
 #include "Database.hpp"
 #include <algorithm>
 #include <random>
@@ -71,7 +72,7 @@ bool CoinSearchPopup::setup() {
     m_mainLayer->addChild(menu);
 
     float startX = 60.f;
-    float startY = m_size.height - 70.f;
+    float startY = m_size.height - 50.f;
     for (int i = 1; i <= 10; ++i) {
         auto offSpr = ButtonSprite::create(std::to_string(i).c_str(), 20, true, "bigFont.fnt", "GJ_button_04.png", 30, 0.6f);
         auto onSpr = ButtonSprite::create(std::to_string(i).c_str(), 20, true, "bigFont.fnt", "GJ_button_02.png", 30, 0.6f);
@@ -96,9 +97,9 @@ bool CoinSearchPopup::setup() {
     menu->addChild(m_qualityBtn);
     updateQualitySprite();
 
-    float toggleY = 100.f;
+    float toggleY = 130.f;
     float toggleX = 40.f;
-    float spacingY = 32.f;
+    float spacingY = 26.f;
 
     auto freeCoinToggle = CCMenuItemToggler::createWithStandardSprites(this, menu_selector(CoinSearchPopup::onFreeCoinsToggle), 0.6f);
     freeCoinToggle->setPosition({toggleX, toggleY});
@@ -114,7 +115,7 @@ bool CoinSearchPopup::setup() {
     auto infoBtn = CCMenuItemSpriteExtra::create(infoSpr, this, menu_selector(CoinSearchPopup::onInfoBtn));
     infoBtn->setPosition({toggleX + freeLbl->getScaledContentSize().width + 35.f, toggleY});
     menu->addChild(infoBtn);
-    // Random List
+    
     auto randomToggle = CCMenuItemToggler::createWithStandardSprites(this, menu_selector(CoinSearchPopup::onRandomListToggle), 0.6f);
     randomToggle->setPosition({toggleX, toggleY - spacingY});
     menu->addChild(randomToggle);
@@ -124,7 +125,6 @@ bool CoinSearchPopup::setup() {
     randomLbl->setScale(0.5f);
     m_mainLayer->addChild(randomLbl);
 
-    // Random Info button
     auto randInfoSpr = CCSprite::createWithSpriteFrameName("GJ_infoIcon_001.png");
     randInfoSpr->setScale(0.6f);
     auto randInfoBtn = CCMenuItemSpriteExtra::create(randInfoSpr, this, menu_selector(CoinSearchPopup::onRandomInfoBtn));
@@ -140,12 +140,36 @@ bool CoinSearchPopup::setup() {
     uncompLbl->setScale(0.5f);
     m_mainLayer->addChild(uncompLbl);
 
+    auto guideToggle = CCMenuItemToggler::createWithStandardSprites(this, menu_selector(CoinSearchPopup::onOnlyWithGuideToggle), 0.6f);
+    guideToggle->setPosition({toggleX, toggleY - spacingY * 3});
+    menu->addChild(guideToggle);
+    auto guideLbl = CCLabelBMFont::create("Only levels with guide", "bigFont.fnt");
+    guideLbl->setPosition({toggleX + 20.f, toggleY - spacingY * 3});
+    guideLbl->setAnchorPoint({0, 0.5f});
+    guideLbl->setScale(0.5f);
+    m_mainLayer->addChild(guideLbl);
+
+    auto plusSpr = CCSprite::createWithSpriteFrameName("GJ_plusBtn_001.png");
+    plusSpr->setScale(0.7f);
+    auto filterBtnNode = CCMenuItemSpriteExtra::create(plusSpr, this, menu_selector(CoinSearchPopup::onFilterRatingBtn));
+    filterBtnNode->setPosition({toggleX, toggleY - spacingY * 4});
+    menu->addChild(filterBtnNode);
+    auto filterLbl = CCLabelBMFont::create("Filter Coins Rating", "bigFont.fnt");
+    filterLbl->setPosition({toggleX + 20.f, toggleY - spacingY * 4});
+    filterLbl->setAnchorPoint({0, 0.5f});
+    filterLbl->setScale(0.5f);
+    m_mainLayer->addChild(filterLbl);
+
     auto searchSpr = CCSprite::createWithSpriteFrameName("gj_findBtn_001.png");
     auto searchBtn = CCMenuItemSpriteExtra::create(searchSpr, this, menu_selector(CoinSearchPopup::onSearchBtn));
     searchBtn->setPosition({m_size.width - 45.f, 35.f});
     menu->addChild(searchBtn);
 
     return true;
+}
+
+void CoinSearchPopup::onFilterRatingBtn(CCObject* sender) {
+    CoinRatingFilterPopup::create(&m_selectedCoinRatings)->show();
 }
 
 void CoinSearchPopup::onRatingToggle(CCObject* sender) {
@@ -221,6 +245,11 @@ void CoinSearchPopup::onOnlyUncompletedToggle(CCObject* sender) {
     m_onlyUncompleted = !toggler->isToggled();
 }
 
+void CoinSearchPopup::onOnlyWithGuideToggle(CCObject* sender) {
+    auto toggler = static_cast<CCMenuItemToggler*>(sender);
+    m_onlyWithGuide = !toggler->isToggled();
+}
+
 void CoinSearchPopup::onInfoBtn(CCObject* sender) {
     FLAlertLayer::create(
         "Free Coins info",
@@ -245,9 +274,11 @@ void CoinSearchPopup::onSearchBtn(CCObject* sender) {
     
     Database::fetchFilteredLevels(
         m_selectedRatings, 
+        m_selectedCoinRatings, // newly passed coin ratings filter
         m_qualityFilter, 
         m_freeCoins, 
         false, // Recently added is now deprecated in the UI, replaced by local random
+        m_onlyWithGuide,
         [this](std::optional<std::vector<int>> levelsOpt) {
             if (auto spinner = m_mainLayer->getChildByID("loading-spinner")) {
                 spinner->removeFromParent();

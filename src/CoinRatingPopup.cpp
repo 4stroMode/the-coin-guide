@@ -116,7 +116,26 @@ void CoinRatingPopup::onSubmit(CCObject* sender) {
     auto loading = FLAlertLayer::create("Loading", "Evaluating coins...", "OK");
     loading->show();
 
-    Database::submitCoinRating(m_level->m_levelID, m_selectedRating, [this, loading](bool success, const std::string& error) {
+    int levelRating = m_level->m_stars;
+    if (m_level->m_demon > 0) {
+        switch (m_level->m_demonDifficulty) {
+            case 3: levelRating = 10; break;
+            case 4: levelRating = 11; break;
+            case 0: levelRating = 12; break; // Hard demon
+            case 5: levelRating = 13; break;
+            case 6: levelRating = 14; break;
+            default: levelRating = 12; break;
+        }
+    }
+    
+    std::string levelCuality = "";
+    if (m_level->m_isEpic == 3) levelCuality = "mythic";
+    else if (m_level->m_isEpic == 2) levelCuality = "legendary";
+    else if (m_level->m_isEpic == 1) levelCuality = "epic";
+    else if (m_level->m_featured > 0) levelCuality = "featured";
+    else if (m_level->m_stars > 0) levelCuality = "star";
+
+    Database::submitCoinRating(m_level->m_levelID, m_selectedRating, levelRating, levelCuality, [this, loading](bool success, const std::string& error) {
         geode::queueInMainThread([this, loading, success, error]() {
             loading->keyBackClicked();
             if (success) {

@@ -16,7 +16,8 @@
         "source": "https://github.com/4stroMode/the-coin-guide"
     },
     "dependencies": {
-        "jouca.badgesapi": ">=v1.0.0"
+        "jouca.badgesapi": ">=v1.0.0",
+        "alk.better-touch-prio": ">=v1.0.0"
     },
     "resources": {
         "files": [
