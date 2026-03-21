@@ -350,8 +350,8 @@ void Database::fetchFilteredLevels(std::vector<int> ratings, std::vector<int> co
             if (!coinRatings.empty()) {
                 // If filtering by Coin Rating, it MUST be in validCoinRatingLevels.
                 for (int lvl : validCoinRatingLevels) {
-                    if (onlyWithGuide) {
-                        // Requires guide, so it MUST also be in uniqueLevels
+                    if (onlyWithGuide || freeCoins) {
+                        // Requires guide (or freecoins flag), so it MUST also be in uniqueLevels
                         if (uniqueLevels.find(lvl) != uniqueLevels.end()) {
                             resultLevels.push_back(lvl);
                         }
@@ -362,7 +362,7 @@ void Database::fetchFilteredLevels(std::vector<int> ratings, std::vector<int> co
                 }
             } else {
                 // No Coin Rating filter
-                if (onlyWithGuide) {
+                if (onlyWithGuide || freeCoins) {
                     // Only what's in uniqueLevels
                     resultLevels.assign(uniqueLevels.begin(), uniqueLevels.end());
                 } else {
